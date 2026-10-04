@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>شبیه‌ساز منشور</title>
+<style>
+  :root { --bg:#07070a; --ink:#e9e6df; --dim:#8b8a90; --line:#26262d; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+    font-family: Vazirmatn, "Noto Sans Arabic", Tahoma, sans-serif; overflow:hidden; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  .panel { position:fixed; left:0; right:0; bottom:0; padding:12px 16px 16px;
+    background:linear-gradient(to top, rgba(7,7,10,.96) 70%, rgba(7,7,10,0));
+    max-height:62vh; overflow:auto; }
+  .row { display:grid; grid-template-columns: 7.5em 1fr 3.5em; gap:10px; align-items:center;
+    margin:7px 0; font-size:14px; }
+  .row output { color:var(--dim); font-size:13px; direction:ltr; text-align:left; }
+  input[type=range] { width:100%; accent-color:#e9e6df; }
+  select { background:#111116; color:var(--ink); border:1px solid var(--line);
+    border-radius:8px; padding:6px 8px; font:inherit; grid-column: 2 / 4; }
+  #readout { font-size:14px; margin:6px 0 2px; min-height:1.6em; }
+  details { margin-top:8px; border-top:1px solid var(--line); padding-top:8px; }
+  summary { cursor:pointer; font-size:14px; color:var(--dim); }
+  ol { margin:8px 0 0; padding-inline-start:1.4em; font-size:13.5px; line-height:1.9; color:#c9c6bf; }
+  ol li.on { color:#fff; }
+  ol li.warn.on { color:#ffb36b; }
+  @media (prefers-reduced-motion: no-preference) { ol li { transition: color .2s; } }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="panel">
+  <div id="readout"></div>
+  <div class="row"><label for="glass">جنس منشور</label>
+    <select id="glass">
+      <option value="water">آب</option>
+      <option value="bk7" selected>شیشه‌ی تاج (BK7)</option>
+      <option value="sf11">شیشه‌ی سنگین (SF11)</option>
+      <option value="diamond">الماس</option>
+    </select></div>
+  <div class="row"><label for="aim">زاویه‌ی نور</label>
+    <input id="aim" type="range" min="-25" max="25" step="0.5" value="-8"><output id="aimO"></output></div>
+  <div class="row"><label for="rot">چرخش منشور</label>
+    <input id="rot" type="range" min="-30" max="30" step="0.5" value="0"><output id="rotO"></output></div>
+  <div class="row"><label for="amp">شدت پاشندگی</label>
+    <input id="amp" type="range" min="1" max="6" step="0.1" value="2"><output id="ampO"></output></div>
+
+  <details>
+    <summary>الگوریتم (فلوچارت)</summary>
+    <ol id="flow">
+      <li data-s="0">منبع نور سفید پرتو را می‌فرستد (۴۰۰ تا ۷۰۰ نانومتر)</li>
+      <li data-s="1">برای هر طول‌موج، ضریب شکست n(λ) = A + B/λ² حساب می‌شود</li>
+      <li data-s="2">پرتو به وجه اول منشور می‌خورد و با قانون اسنل می‌شکند</li>
+      <li data-s="3">پرتو داخل شیشه تا وجه بعدی می‌رود</li>
+      <li data-s="4" class="warn">آیا زاویه از زاویه‌ی بحرانی بیشتر است؟ بله ← بازتاب کلی و ادامه داخل شیشه</li>
+      <li data-s="5">خروج از وجه دوم و شکست دوباره (بنفش بیشتر از قرمز منحرف می‌شود)</li>
+      <li data-s="6">پرتوها روی پرده می‌افتند و طیف رنگی ساخته می‌شود</li>
+    </ol>
+  </details>
+</div>
+
+<script>
+// ---------- فیزیک ----------
+const GLASS = {            // Cauchy: n = A + B / λ²  (λ بر حسب میکرومتر)
+  water:   { A:1.3199, B:0.0031 },
+  bk7:     { A:1.5046, B:0.0042 },
+  sf11:    { A:1.7432, B:0.0100 },
+  diamond: { A:2.3780, B:0.0121 },
+};
+const refrIndex = (g, nm, amp) => { const l = nm/1000; return g.A + amp * g.B/(l*l); };
+
+const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y}), add=(a,b)=>({x:a.x+b.x,y:a.y+b.y});
+const mul=(a,k)=>({x:a.x*k,y:a.y*k}), dot=(a,b)=>a.x*b.x+a.y*b.y;
+const cross=(a,b)=>a.x*b.y-a.y*b.x;
+const norm=a=>{const l=Math.hypot(a.x,a.y);return {x:a.x/l,y:a.y/l};};
+
+function refract(d, Nf, n1, n2){          // Nf رو به پرتوی ورودی
+  const cosi = -dot(Nf,d), eta = n1/n2, k = 1 - eta*eta*(1-cosi*cosi);
+  if (k < 0) return { tir:true, d: norm(add(d, mul(Nf, 2*cosi))) };   // بازتاب کلی
+  return { tir:false, d: norm(add(mul(d,eta), mul(Nf, eta*cosi - Math.sqrt(k)))) };
+}
+
+function wl2rgb(w){
+  let r=0,g=0,b=0;
+  if (w<440){r=(440-w)/60;b=1} else if (w<490){g=(w-440)/50;b=1}
+  else if (w<510){g=1;b=(510-w)/20} else if (w<580){r=(w-510)/70;g=1}
+  else if (w<645){r=1;g=(645-w)/65} else {r=1}
+  const f = w<420 ? .35+.65*(w-380)/40 : w>680 ? .45+.55*(700-w)/20 : 1;
+  const c = v => Math.round(255*Math.pow(Math.max(0,v)*f, .8));
+  return [c(r),c(g),c(b)];
+}
+
+// ---------- صحنه ----------
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+let W=0, H=0, DPR=1;
+
+function resize(){
+  DPR = window.devicePixelRatio||1;
+  W = innerWidth; H = innerHeight;
+  cv.width = W*DPR; cv.height = H*DPR;
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  draw();
+}
+
+function buildPrism(c, R, rotDeg){
+  const rot = rotDeg*Math.PI/180, v=[];
+  for (let i=0;i<3;i++){
+    const a = rot + i*2*Math.PI/3 - Math.PI/2;
+    v.push({x:c.x+R*Math.cos(a), y:c.y+R*Math.sin(a)});
+  }
+  const edges = v.map((a,i)=>{
+    const b = v[(i+1)%3], t = sub(b,a);
+    let n = norm({x:t.y, y:-t.x});
+    if (dot(n, sub(mul(add(a,b),.5), c)) < 0) n = mul(n,-1);
+    return {a,b,n};
+  });
+  return {v, edges};
+}
+
+function nearestHit(p, d, edges, skip){
+  let best=null;
+  edges.forEach((e,i)=>{
+    if (i===skip) return;
+    const s = sub(e.b,e.a), den = cross(d,s);
+    if (Math.abs(den)<1e-9) return;
+    const ap = sub(e.a,p), t = cross(ap,s)/den, u = cross(ap,d)/den;
+    if (t>1e-4 && u>=0 && u<=1 && (!best || t<best.t)) best={t,i,p:add(p,mul(d,t))};
+  });
+  return best;
+}
+
+function trace(src, dir, prism, n, screenX){
+  const pts=[src]; let p=src, d=dir, inside=false, skip=-1, tir=false, entered=false;
+  for (let k=0;k<6;k++){
+    const h = nearestHit(p,d,prism.edges,skip);
+    if (!h) break;
+    pts.push(h.p);
+    const N = prism.edges[h.i].n, Nf = dot(d,N)<0 ? N : mul(N,-1);
+    const r = refract(d, Nf, inside?n:1, inside?1:n);
+    p = h.p; d = r.d; skip = h.i;
+    if (r.tir) { tir=true; continue; }
+    if (!inside) { inside=true; entered=true; } else { inside=false; break; }
+  }
+  const len = d.x>1e-3 ? Math.min(2000,(screenX-p.x)/d.x) : 1500;
+  const end = add(p, mul(d, Math.max(len,0)));
+  pts.push(end);
+  return {pts, d, tir, entered, end, hitScreen: d.x>1e-3};
+}
+
+function draw(){
+  const g = GLASS[$('glass').value];
+  const aim = +$('aim').value, rotD = +$('rot').value, amp = +$('amp').value;
+  $('aimO').textContent = aim+'°'; $('rotO').textContent = rotD+'°'; $('ampO').textContent = amp+'×';
+
+  ctx.globalCompositeOperation='source-over';
+  ctx.fillStyle='#07070a'; ctx.fillRect(0,0,W,H);
+
+  const panelH = Math.min(H*0.62, 300);
+  const stageH = H - panelH*0.7;
+  const R = Math.min(W,stageH)*0.22;
+  const c = {x:W*0.42, y:stageH*0.48};
+  const src = {x:W*0.04, y:stageH*0.48};
+  const screenX = W-10;
+  const prism = buildPrism(c,R,rotD);
+
+  // جهت پرتو: به سمت مرکز منشور + انحراف دلخواه
+  const base = Math.atan2(c.y-src.y, c.x-src.x) + aim*Math.PI/180;
+  const dir = {x:Math.cos(base), y:Math.sin(base)};
+
+  // پرده
+  ctx.fillStyle='#14141a'; ctx.fillRect(screenX-3,0,3,stageH);
+
+  // منشور (شیشه)
+  ctx.beginPath(); prism.v.forEach((p,i)=> i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y)); ctx.closePath();
+  ctx.fillStyle='rgba(190,215,235,.07)'; ctx.fill();
+  ctx.strokeStyle='rgba(235,245,255,.75)'; ctx.lineWidth=1.5; ctx.stroke();
+
+  // پرتوها
+  const first = nearestHit(src,dir,prism.edges,-1);
+  let anyTir=false, hits=[], missed=!first;
+
+  // پرتو سفید ورودی
+  const wEnd = first ? first.p : add(src, mul(dir, W));
+  const grd = ctx.createLinearGradient(src.x,src.y,wEnd.x,wEnd.y);
+  grd.addColorStop(0,'rgba(255,255,255,.95)'); grd.addColorStop(1,'rgba(255,255,255,.7)');
+  ctx.strokeStyle='rgba(255,255,255,.18)'; ctx.lineWidth=9; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(src.x,src.y); ctx.lineTo(wEnd.x,wEnd.y); ctx.stroke();
+  ctx.strokeStyle=grd; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(src.x,src.y); ctx.lineTo(wEnd.x,wEnd.y); ctx.stroke();
+
+  // چراغ‌قوه
+  ctx.save(); ctx.translate(src.x,src.y); ctx.rotate(base);
+  ctx.fillStyle='#1b1b21'; ctx.strokeStyle='#4a4a54'; ctx.lineWidth=1.5;
+  ctx.fillRect(-46,-9,40,18); ctx.strokeRect(-46,-9,40,18);
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(-4,0,3,9,0,0,7); ctx.fill();
+  ctx.restore();
+
+  const spectrum=[];
+  ctx.globalCompositeOperation='lighter'; ctx.lineCap='round';
+  for (let nm=400; nm<=700; nm+=4){
+    const n = refrIndex(g,nm,amp);
+    const t = trace(src,dir,prism,n,screenX);
+    if (!t.entered) continue;
+    anyTir = anyTir || t.tir;
+    const [r,gc,b] = wl2rgb(nm);
+    // داخل شیشه کم‌رنگ، بیرون پررنگ
+    const pts=t.pts;
+    for (let i=1;i<pts.length;i++){
+      const outside = i===pts.length-1;
+      ctx.strokeStyle=`rgba(${r},${gc},${b},${outside?0.30:0.07})`;
+      ctx.lineWidth = outside?3:2;
+      ctx.beginPath(); ctx.moveTo(pts[i-1].x,pts[i-1].y); ctx.lineTo(pts[i].x,pts[i].y); ctx.stroke();
+    }
+    if (t.hitScreen) spectrum.push({nm,y:t.end.y,rgb:[r,gc,b]});
+    spectrum.push && (hits.push({nm,d:t.d}));
+  }
+  // طیف روی پرده
+  spectrum.forEach(s=>{
+    ctx.fillStyle=`rgba(${s.rgb[0]},${s.rgb[1]},${s.rgb[2]},.9)`;
+    ctx.fillRect(screenX-9, s.y-2, 9, 4);
+  });
+  ctx.globalCompositeOperation='source-over';
+
+  // خروجی متنی
+  let msg='';
+  if (missed) msg='پرتو به منشور نمی‌خورد؛ زاویه یا چرخش را تغییر بده.';
+  else if (hits.length>1){
+    const ang = d => Math.atan2(d.y,d.x)*180/Math.PI;
+    const dv = Math.abs(ang(hits[0].d)-ang(hits[hits.length-1].d));
+    msg = `پهنای طیف (بنفش تا قرمز): ${dv.toFixed(2)}° — n بنفش ${refrIndex(g,400,amp).toFixed(3)}، n قرمز ${refrIndex(g,700,amp).toFixed(3)}`;
+    if (anyTir) msg += ' — بازتاب کلی رخ داد';
+  } else msg='طیفی تشکیل نشد (بازتاب کلی). چرخش را تغییر بده.';
+  $('readout').textContent = msg;
+
+  // روشن‌کردن مراحل فلوچارت
+  const lis=[...document.querySelectorAll('#flow li')];
+  lis.forEach(li=>{
+    const s=+li.dataset.s;
+    li.classList.toggle('on', missed ? s===0 : (s===4 ? anyTir : true));
+  });
+}
+
+['glass','aim','rot','amp'].forEach(id=>$(id).addEventListener('input',draw));
+addEventListener('resize',resize);
+resize();
+</script>
+</body>
+</html>
