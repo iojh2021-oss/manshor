@@ -3,164 +3,234 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>شبیه‌ساز باران، آب و آینه</title>
+<title>شبیه‌ساز منشور، باران و شکست نور</title>
 <style>
-:root{--bg:#071018;--panel:rgba(7,14,22,.84);--line:rgba(190,225,245,.18);--txt:#edf8ff;--muted:#9eb7c8}
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:Tahoma,"Noto Sans Arabic",sans-serif}
+:root{--bg:#05070b;--panel:rgba(6,12,19,.82);--line:rgba(190,225,245,.18);--txt:#effaff;--muted:#9eb5c5;--cyan:#75e7ff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#030509;color:var(--txt);font-family:Tahoma,"Noto Sans Arabic",sans-serif}
 canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
-.ui{position:fixed;right:16px;top:16px;width:min(390px,calc(100vw - 32px));max-height:calc(100vh - 32px);overflow:auto;padding:16px;border:1px solid var(--line);border-radius:18px;background:var(--panel);backdrop-filter:blur(14px);box-shadow:0 18px 60px #0008}
-h1{font-size:18px;margin:0 0 5px}.sub{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:12px}
-.row{display:grid;grid-template-columns:105px 1fr 48px;gap:8px;align-items:center;margin:9px 0;font-size:13px}.row output{direction:ltr;text-align:left;color:#cdeaff;font-size:12px}
-input[type=range]{width:100%;accent-color:#9fe7ff}select,button{width:100%;background:#0d1b27;color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:8px;font:inherit}
-button{cursor:pointer;margin-top:6px}details{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}summary{cursor:pointer;color:#c8e4f2;font-size:13px}
-.flow{display:grid;gap:6px;margin-top:10px}.step{padding:7px 9px;border-radius:8px;color:#7891a0;font-size:11px;background:#07111a;border:1px solid transparent}.step.on{color:#eaffff;border-color:#65c9ee55;background:#103044}.step b{font-size:10px;color:#6fd9ff}
-.status{margin:8px 0 4px;padding:9px;border-radius:10px;background:#07141d;border:1px solid var(--line);font-size:12px;line-height:1.7}
-.legend{display:flex;gap:10px;flex-wrap:wrap;color:#a9c2d0;font-size:11px}.dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-left:4px}
-@media(max-width:700px){.ui{right:8px;top:8px;width:min(350px,calc(100vw - 16px));padding:12px}.row{grid-template-columns:90px 1fr 42px}}
+.ui{position:fixed;right:14px;top:14px;width:min(380px,calc(100vw - 28px));max-height:calc(100vh - 28px);overflow:auto;padding:15px;border:1px solid var(--line);border-radius:18px;background:var(--panel);backdrop-filter:blur(16px);box-shadow:0 18px 70px #000b}
+h1{font-size:18px;margin:0 0 5px}.sub{font-size:11px;color:var(--muted);line-height:1.8;margin-bottom:10px}
+.row{display:grid;grid-template-columns:92px 1fr 52px;gap:8px;align-items:center;margin:8px 0;font-size:12px}.row output{direction:ltr;text-align:left;color:#d5f5ff;font-size:11px}
+input[type=range]{width:100%;accent-color:#8ee9ff}select,button{width:100%;background:#0b1822;color:var(--txt);border:1px solid var(--line);border-radius:9px;padding:8px;font:inherit}
+button{cursor:pointer;margin-top:6px}details{border-top:1px solid var(--line);margin-top:12px;padding-top:10px}summary{cursor:pointer;color:#cce8f4;font-size:12px}
+.flow{display:grid;gap:5px;margin-top:9px}.step{padding:6px 8px;border-radius:8px;color:#718997;font-size:10px;background:#061019;border:1px solid transparent}.step.on{color:#eaffff;border-color:#65c9ee55;background:#103044}.step b{font-size:9px;color:#71ddff}
+.status{margin:7px 0 4px;padding:8px;border-radius:10px;background:#06131c;border:1px solid var(--line);font-size:11px;line-height:1.7}
+.legend{display:flex;gap:9px;flex-wrap:wrap;color:#a9c2d0;font-size:10px}.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-left:3px}
+@media(max-width:700px){.ui{right:7px;top:7px;width:min(340px,calc(100vw - 14px));padding:11px}.row{grid-template-columns:82px 1fr 46px}}
 </style>
 </head>
 <body>
-<canvas id="scene" aria-label="شبیه‌ساز تصویری شکست نور در قطرات باران روی آینه"></canvas>
+<canvas id="scene" aria-label="شبیه‌ساز منشور و قطرات آب و طیف نور"></canvas>
 <section class="ui">
-<h1>باران + آب + آینه</h1>
-<div class="sub">هر قطره به‌صورت یک لنز آب مدل می‌شود: پرتو به سطح قطره می‌رسد، وارد آب می‌شود، درون قطره منحرف می‌شود و هنگام خروج دوباره می‌شکند. آینه نیز تصویر زمینه را بازتاب می‌دهد.</div>
-<div class="status" id="status">در حال ساخت مسیرهای نوری…</div>
-<div class="legend"><span><i class="dot" style="background:#fff"></i>نور</span><span><i class="dot" style="background:#79dfff"></i>قطره</span><span><i class="dot" style="background:#d7e9ff"></i>آینه</span><span><i class="dot" style="background:#ffcf72"></i>بازتاب</span></div>
-<div class="row"><label>شدت باران</label><input id="rain" type="range" min="20" max="180" value="85"><output id="rainO">85</output></div>
-<div class="row"><label>اندازه قطره</label><input id="drop" type="range" min="3" max="15" step=".5" value="8"><output id="dropO">8</output></div>
+<h1>منشور + باران + سطح بازتابنده</h1>
+<div class="sub">نور سفید وارد منشور شفاف می‌شود، به رنگ‌های طیفی تفکیک می‌شود، با قطره‌های آب برخورد می‌کند و پس از شکست‌های متوالی به سطح خیس می‌رسد.</div>
+<div class="status" id="status">در حال ساخت مسیرهای اپتیکی…</div>
+<div class="legend"><span><i class="dot" style="background:#fff"></i>نور سفید</span><span><i class="dot" style="background:#ff4545"></i>طیف</span><span><i class="dot" style="background:#79eaff"></i>قطره</span><span><i class="dot" style="background:#dbefff"></i>سطح خیس</span></div>
+<div class="row"><label>شدت باران</label><input id="rain" type="range" min="25" max="220" value="120"><output id="rainO">120</output></div>
+<div class="row"><label>اندازه قطره</label><input id="drop" type="range" min="3" max="14" step=".5" value="7"><output id="dropO">7</output></div>
 <div class="row"><label>ضریب آب</label><input id="ior" type="range" min="1.30" max="1.40" step=".005" value="1.333"><output id="iorO">1.333</output></div>
-<div class="row"><label>زاویه نور</label><input id="angle" type="range" min="-45" max="45" step=".5" value="-12"><output id="angleO">-12°</output></div>
-<div class="row"><label>بازتاب آینه</label><input id="mirror" type="range" min="0" max="100" value="82"><output id="mirrorO">82%</output></div>
-<div class="row"><label>شکست قطره</label><input id="bend" type="range" min=".5" max="2.5" step=".05" value="1"><output id="bendO">1×</output></div>
-<button id="reset">بازسازی صحنه</button>
-<details open><summary>منطق برنامه به‌صورت گرافیکی</summary>
+<div class="row"><label>زاویه نور</label><input id="angle" type="range" min="-22" max="22" step=".5" value="0"><output id="angleO">0°</output></div>
+<div class="row"><label>پراکندگی منشور</label><input id="disp" type="range" min=".45" max="1.8" step=".05" value="1"><output id="dispO">1×</output></div>
+<div class="row"><label>بازتاب سطح</label><input id="reflect" type="range" min="0" max="100" value="68"><output id="reflectO">68%</output></div>
+<div class="row"><label>قدرت شکست قطره</label><input id="bend" type="range" min=".5" max="1.8" step=".05" value="1"><output id="bendO">1×</output></div>
+<button id="reset">بازسازی صحنه و قطره‌ها</button>
+<details open><summary>گراف اجرای مدل اپتیکی</summary>
 <div class="flow">
-<div class="step on" id="s1"><b>01</b> منبع نور → پرتوهای متعدد وارد صحنه می‌شوند</div>
-<div class="step" id="s2"><b>02</b> برخورد پرتو با مرز هر قطره → محاسبه نرمال سطح</div>
-<div class="step" id="s3"><b>03</b> قانون اسنل: شکست از هوا به آب</div>
-<div class="step" id="s4"><b>04</b> حرکت پرتو داخل قطره و تغییر مسیر وابسته به نقطه برخورد</div>
-<div class="step" id="s5"><b>05</b> قانون اسنل: خروج آب به هوا + بازتاب داخلی احتمالی</div>
-<div class="step" id="s6"><b>06</b> تصویر پشت قطره با انحراف اپتیکی محلی دیده می‌شود</div>
-<div class="step" id="s7"><b>07</b> نور برخوردکننده با آینه بازتاب می‌شود و مسیر برگشتی می‌گیرد</div>
+<div class="step on" id="s1"><b>01</b> منبع نور سفید → پرتوهای ورودی به منشور</div>
+<div class="step" id="s2"><b>02</b> برخورد با وجه اول منشور + قانون اسنل</div>
+<div class="step" id="s3"><b>03</b> شکست وابسته به طول موج و تشکیل طیف</div>
+<div class="step" id="s4"><b>04</b> برخورد هر رنگ با قطرهٔ مشخص → نرمال سطح</div>
+<div class="step" id="s5"><b>05</b> ورود به آب → حرکت داخل قطره → بازتاب داخلی احتمالی</div>
+<div class="step" id="s6"><b>06</b> خروج از قطره → شکست آب به هوا و ادامهٔ پرتو</div>
+<div class="step" id="s7"><b>07</b> برخورد با سطح خیس → بازتاب و تصویر رنگی</div>
 </div></details>
 </section>
 <script>
-const cv=document.getElementById('scene'),ctx=cv.getContext('2d');
-const $=id=>document.getElementById(id);
-let W=0,H=0,DPR=1, drops=[],t0=performance.now();
-
+const cv=document.getElementById('scene'),ctx=cv.getContext('2d'),$=id=>document.getElementById(id);
+let W=0,H=0,DPR=1,drops=[],last=performance.now(),stats={hits:0,exits:0,tir:0,ground:0};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const V=(x,y)=>({x,y}), add=(a,b)=>V(a.x+b.x,a.y+b.y), sub=(a,b)=>V(a.x-b.x,a.y-b.y), mul=(a,k)=>V(a.x*k,a.y*k);
-const dot=(a,b)=>a.x*b.x+a.y*b.y, len=a=>Math.hypot(a.x,a.y), norm=a=>{const l=len(a)||1;return V(a.x/l,a.y/l)};
-function refract(d,n,n1,n2){
-  const cosi=clamp(-dot(n,d),-1,1), eta=n1/n2, k=1-eta*eta*(1-cosi*cosi);
-  if(k<0)return {tir:true,d:sub(d,mul(n,2*dot(d,n)))};
-  return {tir:false,d:norm(add(mul(d,eta),mul(n,eta*cosi-Math.sqrt(k))))};
-}
+const V=(x,y)=>({x,y}),add=(a,b)=>V(a.x+b.x,a.y+b.y),sub=(a,b)=>V(a.x-b.x,a.y-b.y),mul=(a,k)=>V(a.x*k,a.y*k);
+const dot=(a,b)=>a.x*b.x+a.y*b.y,len=a=>Math.hypot(a.x,a.y),norm=a=>{let l=len(a)||1;return V(a.x/l,a.y/l)};
 function reflect(d,n){return norm(sub(d,mul(n,2*dot(d,n))))}
-
-function resize(){DPR=devicePixelRatio||1;W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);buildDrops();draw()}
+function refract(d,n,n1,n2){
+  let cosi=clamp(-dot(n,d),-1,1),eta=n1/n2,k=1-eta*eta*(1-cosi*cosi);
+  if(k<0)return{tir:true,d:reflect(d,n)};
+  return{tir:false,d:norm(add(mul(d,eta),mul(n,eta*cosi-Math.sqrt(k))))};
+}
+function rayCircle(p,d,c,r){
+  let q=sub(p,c),b=dot(q,d),cc=dot(q,q)-r*r,disc=b*b-cc;
+  if(disc<0)return null;
+  let s=Math.sqrt(disc),t=-b-s;if(t<1e-5)t=-b+s;if(t<1e-5)return null;
+  return {t,p:add(p,mul(d,t)),n:norm(sub(add(p,mul(d,t)),c))};
+}
+function raySegment(p,d,a,b){
+  let e=sub(b,a),den=d.x*e.y-d.y*e.x;if(Math.abs(den)<1e-8)return null;
+  let q=sub(a,p),t=(q.x*e.y-q.y*e.x)/den,u=(q.x*d.y-q.y*d.x)/den;
+  if(t>1e-5&&u>=0&&u<=1)return{t,p:add(p,mul(d,t))};
+  return null;
+}
+const colors=[
+ {name:'قرمز',c:'#ff3d3d',n:1.514},
+ {name:'نارنجی',c:'#ff8a24',n:1.516},
+ {name:'زرد',c:'#ffe13b',n:1.518},
+ {name:'سبز',c:'#4cff75',n:1.522},
+ {name:'فیروزه‌ای',c:'#34e5d0',n:1.526},
+ {name:'آبی',c:'#43a8ff',n:1.531},
+ {name:'بنفش',c:'#bd65ff',n:1.538}
+];
+function prism(){
+  let s=Math.min(W,H),cx=W*.25,base=s*.30,h=s*.47;
+  return {a:V(cx-base*.5,H*.72),b:V(cx+base*.5,H*.72),c:V(cx,H*.72-h)};
+}
 function buildDrops(){
-  const count=+$('rain').value, r=+$('drop').value;
-  drops=Array.from({length:count},(_,i)=>({
-    x:Math.random()*W,y:Math.random()*Math.max(1,H*.72),r:r*(.55+Math.random()*.8),
-    vy:25+Math.random()*65,vx:(Math.random()-.5)*4,phase:Math.random()*6.28,seed:i
-  }));
-}
-function stepDrops(dt){
-  for(const d of drops){d.y+=d.vy*dt;d.x+=d.vx*dt;if(d.y>H*.78+d.r)d.y=-d.r;if(d.x<-d.r)d.x=W+d.r;if(d.x>W+d.r)d.x=-d.r}
-}
-function background(time){
-  const sky=ctx.createLinearGradient(0,0,0,H);sky.addColorStop(0,'#07121d');sky.addColorStop(.62,'#122737');sky.addColorStop(1,'#081116');ctx.fillStyle=sky;ctx.fillRect(0,0,W,H);
-  // distant city/landscape
-  ctx.fillStyle='#0a1822';for(let x=0;x<W;x+=28){const h=25+(x*17%70);ctx.fillRect(x,H*.72-h,20,h)}
-  // light sources
-  for(let i=0;i<7;i++){const x=W*.06+i*W*.12,y=H*.58+(i%2)*15;const rg=ctx.createRadialGradient(x,y,0,x,y,65);rg.addColorStop(0,'rgba(255,205,120,.28)');rg.addColorStop(1,'rgba(255,205,120,0)');ctx.fillStyle=rg;ctx.fillRect(x-65,y-65,130,130)}
-}
-function mirrorScene(time){
-  const mx=W*.62,my=H*.22,mw=W*.31,mh=H*.55;
-  // mirror frame
-  ctx.save();ctx.shadowBlur=28;ctx.shadowColor='#000';ctx.fillStyle='#18232c';ctx.fillRect(mx-9,my-9,mw+18,mh+18);ctx.restore();
-  const g=ctx.createLinearGradient(mx,my,mx+mw,my+mh);g.addColorStop(0,'#a8d1e0');g.addColorStop(.5,'#456879');g.addColorStop(1,'#b9d9e3');ctx.fillStyle=g;ctx.fillRect(mx,my,mw,mh);
-  ctx.save();ctx.beginPath();ctx.rect(mx,my,mw,mh);ctx.clip();
-  // reflected scene: inverted vertically, deliberately softer
-  ctx.globalAlpha=+$('mirror').value/100*.72;
-  ctx.translate(0,my*2+mh);ctx.scale(1,-1);background(time);
-  ctx.restore();
-  ctx.strokeStyle='rgba(225,248,255,.75)';ctx.lineWidth=2;ctx.strokeRect(mx,my,mw,mh);
-  // mirror glare
-  const glare=ctx.createLinearGradient(mx,my,mx+mw*.75,my+mh*.25);glare.addColorStop(0,'rgba(255,255,255,.18)');glare.addColorStop(.5,'rgba(255,255,255,0)');ctx.fillStyle=glare;ctx.fillRect(mx,my,mw,mh);
-  return {x:mx,y:my,w:mw,h:mh};
-}
-function drawDrop(d,time,ior,bend){
-  const wob=Math.sin(time*.002+d.phase)*.7, r=d.r;
-  ctx.save();ctx.translate(d.x+wob,d.y);
-  // local background sampling approximation: magnified/displaced elliptical scene
-  ctx.globalAlpha=.23;const rg=ctx.createRadialGradient(-r*.35,-r*.4,0,0,0,r*1.3);rg.addColorStop(0,'#ffffff');rg.addColorStop(.28,'#b9edff');rg.addColorStop(.7,'#58b9d8');rg.addColorStop(1,'#15516d');ctx.fillStyle=rg;ctx.beginPath();ctx.ellipse(0,0,r,r*1.12,0,0,Math.PI*2);ctx.fill();
-  // lens border
-  ctx.globalAlpha=.72;ctx.strokeStyle='#c8f5ff';ctx.lineWidth=1.1;ctx.beginPath();ctx.ellipse(0,0,r,r*1.12,0,0,Math.PI*2);ctx.stroke();
-  ctx.globalAlpha=.9;ctx.fillStyle='#fff';ctx.beginPath();ctx.ellipse(-r*.35,-r*.38,r*.18,r*.11,-.4,0,Math.PI*2);ctx.fill();
-  ctx.restore();
-  return {x:d.x+wob,y:d.y,r};
-}
-function rayThroughDrop(p,d,drop,ior,bend){
-  const rel=sub(p,V(drop.x,drop.y)), b=dot(rel,d), c=dot(rel,rel)-drop.r*drop.r;
-  const disc=b*b-c;if(disc<0)return null;const t=-b-Math.sqrt(disc);if(t<=0)return null;
-  const hit=add(p,mul(d,t)), n=norm(sub(hit,V(drop.x,drop.y)));
-  const n1=refract(d,n,1,ior);if(n1.tir)return {hit,out:d,tir:true};
-  // chord through sphere; use opposite surface
-  const rel2=sub(hit,V(drop.x,drop.y)), b2=dot(rel2,n1.d), c2=dot(rel2,rel2)-drop.r*drop.r;
-  const t2=-b2+Math.sqrt(Math.max(0,b2*b2-c2)), exit=add(hit,mul(n1.d,t2));
-  const nOut=norm(sub(exit,V(drop.x,drop.y))), out=refract(n1.d,nOut,ior,1);
-  return {hit,inside:exit,out:out.d,tir:out.tir};
-}
-function drawRays(time,mirror,ior,bend){
-  const angle=(+$('angle').value)*Math.PI/180;
-  const origin=V(W*.07,H*.17);
-  const rays=16;
-  let hitCount=0, reflected=0;
-  ctx.lineCap='round';
-  for(let i=0;i<rays;i++){
-    const yy=origin.y+(i-(rays-1)/2)*2.7;
-    let p=V(origin.x,yy), d=norm(V(Math.cos(angle),Math.sin(angle)+i*.003));
-    ctx.strokeStyle='rgba(255,250,220,.16)';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(p.x+W*.65*d.x,p.y+W*.65*d.y);ctx.stroke();
-    // nearest visible drop intersection, repeated a few times
-    for(let pass=0;pass<3;pass++){
-      let best=null,bestIdx=-1;
-      drops.forEach((dr,idx)=>{const h=rayThroughDrop(p,d,dr,ior,bend);if(h&&(!best||len(sub(h.hit,p))<len(sub(best.hit,p)))){best=h;bestIdx=idx}});
-      if(best){
-        hitCount++;
-        ctx.strokeStyle='rgba(120,220,255,.34)';ctx.lineWidth=1.15;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(best.hit.x,best.hit.y);ctx.stroke();
-        if(best.inside){ctx.strokeStyle='rgba(220,250,255,.5)';ctx.beginPath();ctx.moveTo(best.hit.x,best.hit.y);ctx.lineTo(best.inside.x,best.inside.y);ctx.stroke()}
-        ctx.strokeStyle='rgba(255,238,190,.5)';ctx.beginPath();ctx.moveTo(best.inside?.x||best.hit.x,best.inside?.y||best.hit.y);ctx.lineTo((best.inside?.x||best.hit.x)+W*.3*best.out.x,(best.inside?.y||best.hit.y)+W*.3*best.out.y);ctx.stroke();
-        p=best.inside||best.hit;d=best.out;
-      }else break;
-    }
-    // ray hits mirror plane approximately and reflects
-    const mx=mirror.x;
-    if(d.x>0){const tt=(mx-p.x)/d.x;if(tt>0){const hit=add(p,mul(d,tt));if(hit.y>mirror.y&&hit.y<mirror.y+mirror.h){const rd=reflect(d,V(-1,0));ctx.strokeStyle='rgba(255,207,114,.55)';ctx.lineWidth=1.4;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(hit.x,hit.y);ctx.lineTo(hit.x+W*.18*rd.x,hit.y+W*.18*rd.y);ctx.stroke();reflected++}}}
+  let count=+$('rain').value,r=+$('drop').value,p=prism(),out=[];
+  let angle=Math.atan2(+$('angle').value,1);
+  let origin=V(W*.08,H*.57), target=V(p.a.x+p.c.x*.0,p.c.y+(p.b.y-p.c.y)*.52);
+  let axis=norm(sub(target,origin));
+  for(let i=0;i<count*2;i++){
+    let x=W*.34+Math.random()*W*.58,y=H*.18+Math.random()*H*.66;
+    let band=Math.min(colors.length-1,Math.max(0,Math.floor(((y-H*.20)/(H*.61))*colors.length)));
+    let c=colors[band];
+    let rr=r*(.45+Math.random()*.9);
+    let hit=rayCircle(origin,axis,V(x,y),rr);
+    if(hit || Math.random()<.18)out.push({x,y,r:rr,vy:18+Math.random()*58,vx:(Math.random()-.5)*3,phase:Math.random()*6.28,color:c.c,wave:band});
   }
-  return {hitCount,reflected};
+  drops=out.slice(0,count*1.5);
 }
-function updateFlow(hits){
-  const ids=['s1','s2','s3','s4','s5','s6','s7'];ids.forEach((id,i)=>$(id).classList.toggle('on',i<Math.max(1,Math.min(7,Math.ceil(hits/2)))));
+function resize(){DPR=devicePixelRatio||1;W=innerWidth;H=innerHeight;cv.width=W*DPR;cv.height=H*DPR;ctx.setTransform(DPR,0,0,DPR,0,0);buildDrops()}
+function background(){
+  let g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#020307');g.addColorStop(.58,'#0a1017');g.addColorStop(1,'#020306');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  let glow=ctx.createRadialGradient(W*.62,H*.38,0,W*.62,H*.38,W*.55);glow.addColorStop(0,'rgba(90,30,25,.18)');glow.addColorStop(.55,'rgba(40,20,35,.08)');glow.addColorStop(1,'transparent');ctx.fillStyle=glow;ctx.fillRect(0,0,W,H);
 }
-let last=performance.now();
-function draw(now=performance.now()){
-  const dt=Math.min(.035,(now-last)/1000);last=now;stepDrops(dt);background(now);const mir=mirrorScene(now);
-  const ior=+$('ior').value,bend=+$('bend').value;
-  const stats=drawRays(now,mir,ior,bend);
-  for(const d of drops)drawDrop(d,now,ior,bend);
-  $('status').textContent=`قطره‌های فعال: ${drops.length}  |  برخوردهای محاسبه‌شده: ${stats.hitCount}  |  بازتاب آینه: ${stats.reflected}  |  n آب: ${ior.toFixed(3)}`;
-  updateFlow(stats.hitCount);
-  requestAnimationFrame(draw);
+function ground(){
+  let y=H*.735;
+  let g=ctx.createLinearGradient(0,y,0,H);g.addColorStop(0,'#172025');g.addColorStop(.15,'#0b1115');g.addColorStop(1,'#010204');ctx.fillStyle=g;ctx.fillRect(0,y,W,H-y);
+  ctx.strokeStyle='rgba(190,225,235,.28)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+  for(let i=0;i<150;i++){
+    let x=(i*83.7)%W, yy=y+Math.random()*(H-y), rr=.5+Math.random()*2.4;
+    ctx.fillStyle='rgba(150,205,220,'+(0.05+Math.random()*.16)+')';ctx.beginPath();ctx.arc(x,yy,rr,0,Math.PI*2);ctx.fill();
+  }
+  return y;
 }
-['rain','drop'].forEach(id=>$(id).addEventListener('input',()=>{ $(id+'O').textContent=$(id).value;buildDrops()}));
-$('ior').addEventListener('input',()=>{$('iorO').textContent=(+$('ior').value).toFixed(3)});
-$('angle').addEventListener('input',()=>{$('angleO').textContent=$('angle').value+'°'});
-$('mirror').addEventListener('input',()=>{$('mirrorO').textContent=$('mirror').value+'%'});
-$('bend').addEventListener('input',()=>{$('bendO').textContent=$('bend').value+'×'});
-$('reset').onclick=buildDrops;addEventListener('resize',resize);resize();
+function flashlight(){
+  let x=W*.055,y=H*.58;
+  ctx.save();ctx.translate(x,y);
+  let beam=ctx.createLinearGradient(0,0,W*.24,0);beam.addColorStop(0,'rgba(255,255,245,.28)');beam.addColorStop(1,'rgba(255,255,245,0)');ctx.fillStyle=beam;ctx.beginPath();ctx.moveTo(15,-15);ctx.lineTo(W*.22,-55);ctx.lineTo(W*.22,55);ctx.lineTo(15,15);ctx.closePath();ctx.fill();
+  ctx.fillStyle='#16191d';ctx.beginPath();ctx.ellipse(0,0,34,25,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#292d32';ctx.fillRect(-15,-28,25,56);ctx.strokeStyle='#5b6267';ctx.strokeRect(-15,-28,25,56);
+  let rg=ctx.createRadialGradient(19,0,0,19,0,25);rg.addColorStop(0,'#fff');rg.addColorStop(.3,'#f5f4e9');rg.addColorStop(1,'#858a88');ctx.fillStyle=rg;ctx.beginPath();ctx.arc(19,0,22,0,Math.PI*2);ctx.fill();
+  ctx.restore();return V(x+39,y);
+}
+function drawPrism(p){
+  ctx.save();ctx.shadowBlur=30;ctx.shadowColor='rgba(190,240,255,.28)';
+  let g=ctx.createLinearGradient(p.c.x,p.c.y,p.b.x,p.b.y);g.addColorStop(0,'rgba(240,250,255,.20)');g.addColorStop(.45,'rgba(130,205,230,.08)');g.addColorStop(1,'rgba(255,255,255,.18)');
+  ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(p.a.x,p.a.y);ctx.lineTo(p.b.x,p.b.y);ctx.lineTo(p.c.x,p.c.y);ctx.closePath();ctx.fill();
+  ctx.shadowBlur=0;ctx.strokeStyle='rgba(225,247,255,.82)';ctx.lineWidth=1.4;ctx.stroke();
+  ctx.strokeStyle='rgba(255,255,255,.3)';ctx.beginPath();ctx.moveTo(p.c.x,p.c.y);ctx.lineTo(p.c.x,p.b.y);ctx.stroke();
+  ctx.restore();
+}
+function prismRay(origin,d,nGlass){
+  let p=prism(), edges=[[p.a,p.c],[p.c,p.b],[p.b,p.a]],best=null;
+  for(let e of edges){let h=raySegment(origin,d,e[0],e[1]);if(h&&(!best||h.t<best.t))best={...h,a:e[0],b:e[1]}}
+  if(!best)return null;
+  let e=sub(best.b,best.a),n=norm(V(-e.y,e.x));if(dot(n,d)>0)n=mul(n,-1);
+  let inside=refract(d,n,1,nGlass);if(inside.tir)return null;
+  let best2=null;
+  for(let e2 of edges){let h=raySegment(best.p,inside.d,e2[0],e2[1]);if(h&&h.t>1e-4&&(!best2||h.t<best2.t))best2={...h,a:e2[0],b:e2[1]}}
+  if(!best2)return null;
+  let e2=sub(best2.b,best2.a),n2=norm(V(-e2.y,e2.x));if(dot(n2,inside.d)>0)n2=mul(n2,-1);
+  let out=refract(inside.d,n2,nGlass,1);
+  return {inHit:best.p,outHit:best2.p,d:out.d};
+}
+function traceDrop(p,d,dr,nWater){
+  let h=rayCircle(p,d,V(dr.x,dr.y),dr.r);if(!h)return null;
+  let inside=refract(d,h.n,1,nWater);
+  if(inside.tir)return{hit:h.p,tir:true,out:d};
+  let h2=rayCircle(add(h.p,mul(inside.d,.0001)),inside.d,V(dr.x,dr.y),dr.r);
+  if(!h2)return null;
+  let out=refract(inside.d,h2.n,nWater,1);
+  if(out.tir){
+    stats.tir++;
+    let reflected=reflect(inside.d,h2.n);
+    return{hit:h.p,inside:h2.p,tir:true,out:reflected};
+  }
+  stats.exits++;return{hit:h.p,inside:h2.p,out:h2.p?out.d:d};
+}
+function drawRayPath(start,d,col,alpha,limit,withDrops){
+  let p=start,D=norm(d),steps=0;
+  ctx.strokeStyle=col;ctx.globalAlpha=alpha;ctx.lineWidth=1.35;ctx.beginPath();ctx.moveTo(p.x,p.y);
+  while(steps++<5){
+    let best=null;
+    if(withDrops)for(let dr of drops){let h=traceDrop(p,D,dr,+$('ior').value);if(h&&(!best||len(sub(h.hit,p))<len(sub(best.hit,p))))best={type:'drop',h,dr}}
+    let gy=H*.735;
+    if(D.y>0){let tg=(gy-p.y)/D.y;if(tg>1e-4&&(!best||tg<len(sub(best.h.hit,p))))best={type:'ground',t:tg,p:add(p,mul(D,tg))}}
+    if(!best){ctx.lineTo(p.x+D.x*W,p.y+D.y*W);break}
+    if(best.type==='drop'){
+      stats.hits++;ctx.lineTo(best.h.hit.x,best.h.hit.y);ctx.stroke();
+      ctx.strokeStyle=col;ctx.globalAlpha=Math.min(1,alpha+.15);ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(best.h.hit.x,best.h.hit.y);ctx.lineTo(best.h.inside?.x||best.h.hit.x,best.h.inside?.y||best.h.hit.y);ctx.stroke();
+      if(best.h.inside){p=best.h.inside;D=best.h.out;ctx.strokeStyle=col;ctx.globalAlpha=alpha;ctx.lineWidth=1.35;ctx.beginPath();ctx.moveTo(p.x,p.y)}
+      else break;
+    }else{
+      ctx.lineTo(best.p.x,best.p.y);ctx.stroke();stats.ground++;
+      let rd=reflect(D,V(0,-1)),refl=+$('reflect').value/100;
+      ctx.strokeStyle=col;ctx.globalAlpha=alpha*refl*.8;ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(best.p.x,best.p.y);ctx.lineTo(best.p.x+rd.x*W*.12,best.p.y+rd.y*W*.12);ctx.stroke();break;
+    }
+  }
+  ctx.globalAlpha=1;
+}
+function spectrum(origin,p){
+  let baseD=norm(V(1,Math.tan(+$('angle').value*Math.PI/180)));
+  for(let i=0;i<colors.length;i++){
+    let c=colors[i],pr=prismRay(origin,baseD,c.n);
+    if(!pr)continue;
+    let spread=(i-(colors.length-1)/2)*.012*(+$('disp').value);
+    let D=norm(V(pr.d.x,pr.d.y+spread));
+    ctx.strokeStyle=c.c;ctx.globalAlpha=.75;ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(pr.outHit.x,pr.outHit.y);ctx.lineTo(pr.outHit.x+D.x*W*.72,pr.outHit.y+D.y*W*.72);ctx.stroke();
+    ctx.strokeStyle=c.c;ctx.globalAlpha=.95;ctx.lineWidth=1.25;ctx.beginPath();ctx.moveTo(pr.inHit.x,pr.inHit.y);ctx.lineTo(pr.outHit.x,pr.outHit.y);ctx.stroke();
+    drawRayPath(pr.outHit,D,c.c,.78,W*.8,true);
+  }
+  ctx.globalAlpha=1;
+}
+function drawDrops(){
+  for(let dr of drops){
+    let r=dr.r, wob=Math.sin(performance.now()*.002+dr.phase)*.45;
+    ctx.save();ctx.translate(dr.x+wob,dr.y);
+    let rg=ctx.createRadialGradient(-r*.35,-r*.4,0,0,0,r*1.2);rg.addColorStop(0,'rgba(255,255,255,.8)');rg.addColorStop(.18,'rgba(205,245,255,.32)');rg.addColorStop(.58,'rgba(80,190,225,.16)');rg.addColorStop(1,'rgba(20,90,125,.04)');
+    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='rgba(200,245,255,.65)';ctx.lineWidth=.8;ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='rgba(255,255,255,.9)';ctx.beginPath();ctx.ellipse(-r*.35,-r*.4,r*.22,r*.13,-.4,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+  }
+}
+function reflectedSpectrum(){
+  let y=H*.735, p=prism(),opacity=+$('reflect').value/100;
+  ctx.save();ctx.globalAlpha=opacity*.25;ctx.translate(0,y*2);ctx.scale(1,-1);
+  for(let i=0;i<colors.length;i++){let c=colors[i],x=p.c.x+W*.10+i*W*.035;ctx.strokeStyle=c.c;ctx.lineWidth=8;ctx.beginPath();ctx.moveTo(x,p.c.y);ctx.lineTo(x+W*.55,p.c.y+H*.35);ctx.stroke()}
+  ctx.restore();
+}
+function updateFlow(){
+  let ids=['s1','s2','s3','s4','s5','s6','s7'];let n=stats.hits?7:3;ids.forEach((id,i)=>$(id).classList.toggle('on',i<n));
+}
+function draw(){
+  stats={hits:0,exits:0,tir:0,ground:0};background();let gy=ground();let origin=flashlight(),p=prism();drawPrism(p);
+  let white=norm(sub(V(p.a.x,p.c.y+(p.a.y-p.c.y)*.62),origin));
+  ctx.strokeStyle='rgba(255,255,245,.78)';ctx.shadowBlur=12;ctx.shadowColor='#fff';ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(origin.x,origin.y);ctx.lineTo(p.a.x,p.c.y+(p.a.y-p.c.y)*.62);ctx.stroke();ctx.shadowBlur=0;
+  spectrum(origin,p);reflectedSpectrum();drawDrops();
+  $('status').textContent='قطره‌ها: '+drops.length+' | برخورد پرتو/قطره: '+stats.hits+' | خروج از آب: '+stats.exits+' | بازتاب داخلی: '+stats.tir+' | برخورد سطح: '+stats.ground+' | n آب: '+(+$('ior').value).toFixed(3);
+  updateFlow();requestAnimationFrame(draw);
+}
+function animateDrops(dt){for(let d of drops){d.y+=d.vy*dt;d.x+=d.vx*dt;if(d.y>H*.76+d.r)d.y=-d.r;if(d.x<-d.r)d.x=W+d.r;if(d.x>W+d.r)d.x=-d.r}}
+function loop(now){let dt=Math.min(.04,(now-last)/1000);last=now;animateDrops(dt);draw()}
+function sync(id,suffix,format){$(id).addEventListener('input',()=>$(suffix).textContent=format?format(+$((id)).value):$((id)).value)}
+$('rain').oninput=()=>{$('rainO').textContent=$('rain').value;buildDrops()};
+$('drop').oninput=()=>{$('dropO').textContent=$('drop').value;buildDrops()};
+$('ior').oninput=()=>{$('iorO').textContent=(+$('ior').value).toFixed(3)};
+$('angle').oninput=()=>{$('angleO').textContent=$('angle').value+'°'};
+$('disp').oninput=()=>{$('dispO').textContent=$('disp').value+'×'};
+$('reflect').oninput=()=>{$('reflectO').textContent=$('reflect').value+'%'};
+$('bend').oninput=()=>{$('bendO').textContent=$('bend').value+'×'};
+$('reset').onclick=buildDrops;
+addEventListener('resize',resize);resize();requestAnimationFrame(loop);
 </script>
 </body>
 </html>
