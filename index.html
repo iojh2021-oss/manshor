@@ -217,7 +217,7 @@ function draw(){
   ctx.strokeStyle='rgba(255,255,245,.78)';ctx.shadowBlur=12;ctx.shadowColor='#fff';ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(origin.x,origin.y);ctx.lineTo(p.a.x,p.c.y+(p.a.y-p.c.y)*.62);ctx.stroke();ctx.shadowBlur=0;
   spectrum(origin,p);reflectedSpectrum();drawDrops();
   $('status').textContent='قطره‌ها: '+drops.length+' | برخورد پرتو/قطره: '+stats.hits+' | خروج از آب: '+stats.exits+' | بازتاب داخلی: '+stats.tir+' | برخورد سطح: '+stats.ground+' | n آب: '+(+$('ior').value).toFixed(3);
-  updateFlow();requestAnimationFrame(draw);
+  updateFlow();
 }
 function animateDrops(dt){for(let d of drops){d.y+=d.vy*dt;d.x+=d.vx*dt;if(d.y>H*.76+d.r)d.y=-d.r;if(d.x<-d.r)d.x=W+d.r;if(d.x>W+d.r)d.x=-d.r}}
 function loop(now){let dt=Math.min(.04,(now-last)/1000);last=now;animateDrops(dt);draw()}
